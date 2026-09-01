@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Challenge Ligue des Champions</title>
+<link rel="icon" type="image/png" href="icone-app.png">
+<link rel="apple-touch-icon" href="icone-app.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Challenge LDC">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="vue-connexion" class="vue" style="display:none">
+  <div class="carte-login">
+    <h1>Challenge Ligue des Champions</h1>
+    <p class="sous-titre">Saison 2026 – 2027</p>
+
+    <label>Ton nom</label>
+    <select id="select-joueur"><option value="">Chargement...</option></select>
+
+    <label>Mot de passe</label>
+    <input type="password" id="input-mdp" placeholder="Ton mot de passe">
+    <p class="aide">Demande ton mot de passe à Berni si tu ne l'as pas.</p>
+
+    <button id="btn-connexion" class="btn-principal">Se connecter</button>
+    <p id="erreur-connexion" class="erreur"></p>
+  </div>
+</div>
+
+<div id="vue-app" class="vue" style="display:none">
+  <nav class="topbar">
+    <div class="onglets">
+      <button class="onglet actif" data-vue="pronos">Pronos</button>
+      <button class="onglet" data-vue="classement">Classement</button>
+      <button class="onglet" data-vue="reglement">Règlement</button>
+      <button class="onglet" data-vue="admin" id="onglet-admin" style="display:none">Admin</button>
+    </div>
+    <button id="btn-deconnexion" class="lien" title="Déconnexion" aria-label="Déconnexion">✕</button>
+  </nav>
+
+  <img src="banniere.png" alt="Challenge Ligue des Champions 2026/2027" class="banniere">
+
+  <section id="ecran-pronos" class="ecran">
+    <div class="sous-onglets">
+      <button class="sous-onglet-pronos actif" data-mode-pronos="matchs">Matchs</button>
+      <button class="sous-onglet-pronos" data-mode-pronos="speciaux">Pronos spéciaux</button>
+    </div>
+    <div id="bandeau-en-attente" style="display:none"></div>
+    <div id="carte-pronos" class="carte">
+      <div class="entete-journee">
+        <button id="btn-journee-precedente" class="nav-journee" title="Journée précédente">◀</button>
+        <div class="titre-journee">
+          <select id="select-journee"></select>
+          <p class="note">Verrouillage à chaque coup d'envoi</p>
+        </div>
+        <button id="btn-journee-suivante" class="nav-journee" title="Journée suivante">▶</button>
+      </div>
+
+      <div class="pied-journee">
+        <span id="compteur-pronos">Chargement...</span>
+        <button id="btn-aleatoire" class="lien">Aléatoire cette journée</button>
+      </div>
+
+      <div id="liste-matchs"></div>
+    </div>
+
+    <div id="bloc-admin-cible" style="display:none">
+      <label>Saisir pour</label>
+      <select id="select-cible-admin"><option value="">Moi-même</option></select>
+    </div>
+
+    <!-- Pronos spéciaux : deux finalistes + meilleur buteur, saisis une
+         fois en début de compétition et verrouillés au coup d'envoi du
+         premier match de la phase de ligue. Comptent uniquement dans
+         l'onglet Pronostics, pas de sous-classement dédié. -->
+    <div id="carte-speciaux" class="carte carte-final" style="display:none">
+      <div id="speciaux-edition">
+        <p class="note" style="text-align:center;margin-bottom:12px">Verrouillage au coup d'envoi du premier match — pense à valider avant.</p>
+
+        <h2>Le vainqueur et l'autre finaliste</h2>
+        <label>Vainqueur</label>
+        <select id="speciaux-finaliste-1"></select>
+        <label>Finaliste</label>
+        <select id="speciaux-finaliste-2"></select>
+
+        <h2>Meilleur buteur</h2>
+        <select id="speciaux-buteur"></select>
+
+        <button id="btn-sauvegarder-speciaux" class="btn-principal">Enregistrer</button>
+        <p id="statut-speciaux" class="note" style="margin-top:10px"></p>
+      </div>
+
+      <div id="speciaux-verrouille" style="display:none">
+        <p class="note" style="text-align:center;margin-bottom:18px">🔒 Verrouillé depuis le coup d'envoi du premier match</p>
+        <h2>Ton prono</h2>
+        <div id="speciaux-recap"></div>
+        <div id="speciaux-autres" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="ecran-classement" class="ecran" style="display:none">
+    <div class="sous-onglets">
+      <button class="sous-onglet-classement actif" data-mode-classement="general">Général</button>
+      <button class="sous-onglet-classement" data-mode-classement="hr">HR</button>
+      <button class="sous-onglet-classement" data-mode-classement="sidebets">Side Bets</button>
+    </div>
+    <div class="carte" id="carte-classement-table">
+      <table class="table-classement">
+        <thead id="entete-classement"><tr><th></th><th>Rang</th><th>Joueur</th><th>Points</th><th>Payé</th></tr></thead>
+        <tbody id="corps-classement"></tbody>
+      </table>
+    </div>
+    <div class="carte" id="carte-classement-hr" style="display:none">
+      <table class="table-classement">
+        <thead><tr><th></th><th>Rang</th><th>Joueur</th><th>Points</th><th>Payé</th></tr></thead>
+        <tbody id="corps-classement-hr"></tbody>
+      </table>
+    </div>
+    <div id="liste-side-bets" class="carte" style="display:none"></div>
+  </section>
+
+  <section id="ecran-reglement" class="ecran" style="display:none">
+    <div class="carte carte-reglement">
+      <h2>Participation</h2>
+      <p>30€ par joueur. Pot HR (optionnel) : 100€ supplémentaires.</p>
+
+      <h2>Système de points — phase de ligue</h2>
+      <p>Une bonne réponse (1 / N / 2) rapporte les points équivalents à la cote du pronostic. Plus le pari était risqué, plus il rapporte.</p>
+
+      <h2>Système de points — phase à élimination directe</h2>
+      <p>À partir des huitièmes de finale, le pronostic se fait en score exact. Le résultat (1/N/2) qu'on en déduit compte normalement dans le total, doublé si le score exact est trouvé.</p>
+
+      <h2>Pronos spéciaux</h2>
+      <p>En plus des matchs, un pronostic à part sur le vainqueur, l'autre finaliste, et le meilleur buteur de la compétition. Verrouillé au coup d'envoi du premier match, comme le reste.</p>
+
+      <h2>Verrouillage</h2>
+      <p>Chaque match se verrouille automatiquement à son coup d'envoi. Passé ce moment, plus aucune modification possible sur ce match, même si le prono n'a pas été saisi.</p>
+    </div>
+  </section>
+
+  <section id="ecran-admin" class="ecran" style="display:none">
+    <div class="carte carte-admin">
+      <h2>Ajouter un joueur</h2>
+      <label>Nom</label>
+      <input type="text" id="admin-ajout-nom" placeholder="Nom">
+      <label>Prénom</label>
+      <input type="text" id="admin-ajout-prenom" placeholder="Prénom">
+      <label>Mot de passe</label>
+      <input type="text" id="admin-ajout-mdp" placeholder="Mot de passe">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:10px"><input type="checkbox" id="admin-ajout-admin"> Admin</label>
+      <button id="btn-admin-ajouter" class="btn-principal">Ajouter le joueur</button>
+      <p id="statut-admin-ajouter" class="note" style="margin-top:8px"></p>
+    </div>
+
+    <div class="carte carte-admin">
+      <h2>Retirer un joueur</h2>
+      <select id="admin-joueur-retrait"></select>
+      <button id="btn-admin-retirer" class="btn-principal">Retirer ce joueur</button>
+      <p id="statut-admin-retirer" class="note" style="margin-top:8px"></p>
+    </div>
+
+    <div class="carte carte-admin">
+      <h2>Corriger les horaires d'une journée</h2>
+      <label>Journée</label>
+      <select id="admin-journee-horaires"></select>
+      <button id="btn-admin-charger-horaires" class="btn-principal">Charger les matchs</button>
+      <div id="admin-liste-horaires" style="margin-top:14px"></div>
+      <p id="statut-admin-horaires" class="note" style="margin-top:8px"></p>
+    </div>
+
+    <div class="carte carte-admin">
+      <h2>Récupérer les cotes 1N2 (SofaScore)</h2>
+      <p class="note" style="margin-bottom:10px">À lancer quelques jours avant chaque journée. Les matchs sans correspondance restent à saisir à la main.</p>
+      <label>Journée</label>
+      <input type="number" id="admin-cotes-journee" min="1" max="8" placeholder="1 à 8">
+      <button id="btn-admin-cotes" class="btn-principal">Récupérer les cotes</button>
+      <p id="statut-admin-cotes" class="note" style="margin-top:8px"></p>
+    </div>
+
+    <div class="carte carte-admin">
+      <h2>Historique d'un joueur (litiges)</h2>
+      <select id="admin-historique-joueur"></select>
+      <button id="btn-admin-historique" class="btn-principal">Voir l'historique</button>
+      <div id="admin-historique-liste" style="margin-top:14px"></div>
+    </div>
+  </section>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
